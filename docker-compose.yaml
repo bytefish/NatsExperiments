@@ -1,0 +1,20 @@
+services:
+  nats:
+    image: nats:latest
+    volumes:
+      - ./docker/nats-store:/nats/jetstream  # Map local "nats-store" directory to "/nats/jetstream" inside the container
+      - ./docker/nats-log:/nats/logs/        # Map local "nats-log" directory to "/nats/logs" inside the container
+      - ./docker/nats-server.conf:/etc/nats/nats-server.conf:ro
+    command: --config /etc/nats/nats-server.conf
+    networks:
+      - services_network
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+    restart: always
+    healthcheck:
+      test: echo $$(wget --server-response http://nats:8222/varz 2>&1 | grep  '200 OK') | grep '200'  || exit 1
+
+networks:
+  services_network:
+    name: services_network

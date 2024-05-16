@@ -1,0 +1,39 @@
+@HostAddress = http://localhost:61096
+
+POST {{HostAddress}}/ping/
+
+###
+
+###
+
+GET {{HostAddress}}/stream/APP_EVENTS
+Accept: application/json
+
+###
+
+POST {{HostAddress}}/publish/
+Content-Type: application/json
+
+{
+  "subject": "events.mouse.click",
+  "name": "Mouse Event",
+  "description": "Mouse Event Description",
+  "priority": "0.1"
+}
+
+###
+
+POST {{HostAddress}}/publish/
+Content-Type: application/json
+
+{
+  "subject": "events.key.a",
+  "name": "Key Event",
+  "description": "Key Event Description",
+  "priority": 0.5
+}
+
+###
+
+GET {{HostAddress}}/consume/APP_EVENTS
+Accept: application/json

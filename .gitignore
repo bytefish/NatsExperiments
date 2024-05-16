@@ -1,0 +1,15 @@
+*.iml
+.vs/
+.idea/
+*.xproj.user
+*.csproj.user
+project.lock.json
+bin/
+obj/
+packages/
+*.DotSettings.user
+*.db
+TestResults
+
+/docker/nats-log/
+/docker/nats-store/
