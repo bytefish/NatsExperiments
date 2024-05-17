@@ -7,13 +7,13 @@ using NatsExperiments.Hosted;
 using NatsExperiments.Infrastructure;
 using NatsExperiments.Infrastructure.Nats;
 using NatsExperiments.Model;
+using NatsExperiments.Routes;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Nats Client
 builder.AddNatsClient("nats", configureOptions: opts =>
-{
-   
+{  
     var jsonRegistry = new NatsJsonContextSerializerRegistry(AppJsonContext.Default);
     
     return opts with 
@@ -31,32 +31,32 @@ builder.AddNatsClient("nats", configureOptions: opts =>
 builder.AddNatsJetStream();
 
 // Nats Background Service 
-builder.Services.AddSingleton(new StreamConfig(Constants.AppEventsStreamName, ["events.>"])
+builder.Services.AddHostedService((serviceProvider) => 
 {
-    Description = "AppEvents Stream",
-});
+    // Listen to the AppEvents Stream
+    var streamConfig = new StreamConfig(Constants.AppEventsStreamName, ["events.>"])
+    {
+        Description = "AppEvents Stream",
+    };
 
-builder.Services.AddHostedService<AppEventsBackendService>();
+    return new NatsBackendService<AppEvent>(
+        loggerFactory: serviceProvider.GetRequiredService<ILoggerFactory>(),
+        natsJsContext: serviceProvider.GetRequiredService<INatsJSContext>(),
+        streamConfig: streamConfig,
+        consumerOptions: NatsJSOrderedConsumerOpts.Default);
+});
 
 // Health Checks 
 builder.Services.AddHealthChecks();
 
 var app = builder.Build();
 
-app.MapPost("/publish/", async (AppEvent @event, INatsJSContext jetStream) =>
-{
-    try
-    {
-        var ack = await jetStream.PublishAsync(@event.Subject, @event);
+// Health Endpoint
+app.MapHealthChecks("/healthz");
 
-        ack.EnsureSuccess();
-    }
-    catch (NatsJSPublishNoResponseException)
-    {
-        return Results.Problem("Make sure the stream is created before publishing.");
-    }
-
-    return Results.Created();
-});
+// Nats Endpoints
+app
+    .MapGroup("/nats")
+    .MapNatsApi();
 
 app.Run();

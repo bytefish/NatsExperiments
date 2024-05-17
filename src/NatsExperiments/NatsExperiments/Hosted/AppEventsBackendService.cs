@@ -2,22 +2,22 @@
 
 using NATS.Client.JetStream;
 using NATS.Client.JetStream.Models;
-using NatsExperiments.Infrastructure;
 using NatsExperiments.Model;
 
 namespace NatsExperiments.Hosted
 {
-    public class AppEventsBackendService : BackgroundService
+    public class NatsBackendService<TEvent> : BackgroundService
+        
     {
-        private readonly ILogger<AppEventsBackendService> _logger;
+        private readonly ILogger<NatsBackendService<TEvent>> _logger;
 
         private readonly StreamConfig _streamConfig;
         private readonly INatsJSContext _natsJetStreamContext;
         private readonly NatsJSOrderedConsumerOpts _consumerOptions;
 
-        public AppEventsBackendService(ILogger<AppEventsBackendService> logger, INatsJSContext natsJsContext, StreamConfig streamConfig, NatsJSOrderedConsumerOpts? consumerOptions = null)
+        public NatsBackendService(ILoggerFactory loggerFactory, INatsJSContext natsJsContext, StreamConfig streamConfig, NatsJSOrderedConsumerOpts? consumerOptions = null)
         {
-            _logger = logger;
+            _logger = loggerFactory.CreateLogger<NatsBackendService<TEvent>>();
             _streamConfig = streamConfig;
             _natsJetStreamContext = natsJsContext;
             _consumerOptions = consumerOptions ?? NatsJSOrderedConsumerOpts.Default;
@@ -30,7 +30,7 @@ namespace NatsExperiments.Hosted
             
             // Create the Ordered Consumer:
             var consumer = await _natsJetStreamContext
-                .CreateOrderedConsumerAsync(stream: Constants.AppEventsStreamName, _consumerOptions, cancellationToken: cancellationToken)
+                .CreateOrderedConsumerAsync(stream: _streamConfig.Name!, _consumerOptions, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
             // Consume Messages and Log them
