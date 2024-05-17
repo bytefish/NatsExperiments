@@ -2,8 +2,8 @@ services:
   nats:
     image: nats:latest
     volumes:
-      - ./docker/nats-store:/nats/jetstream  # Map local "nats-store" directory to "/nats/jetstream" inside the container
-      - ./docker/nats-log:/nats/logs/        # Map local "nats-log" directory to "/nats/logs" inside the container
+      - ./docker/nats-store:/nats/jetstream
+      - ./docker/nats-log:/nats/logs/
       - ./docker/nats-server.conf:/etc/nats/nats-server.conf:ro
     command: --config /etc/nats/nats-server.conf
     networks:
