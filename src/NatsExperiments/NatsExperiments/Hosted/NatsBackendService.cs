@@ -2,45 +2,53 @@
 
 using NATS.Client.JetStream;
 using NATS.Client.JetStream.Models;
-using NatsExperiments.Model;
+using NatsExperiments.Infrastructure.Logging;
+using NatsExperiments.Infrastructure.Nats;
 
 namespace NatsExperiments.Hosted
 {
     public class NatsBackendService<TEvent> : BackgroundService
-        
     {
         private readonly ILogger<NatsBackendService<TEvent>> _logger;
 
         private readonly StreamConfig _streamConfig;
         private readonly INatsJSContext _natsJetStreamContext;
+        private readonly INatsJSMessageHandler<TEvent> _natsJsMessageHandler;
         private readonly NatsJSOrderedConsumerOpts _consumerOptions;
 
-        public NatsBackendService(ILoggerFactory loggerFactory, INatsJSContext natsJsContext, StreamConfig streamConfig, NatsJSOrderedConsumerOpts? consumerOptions = null)
+        public NatsBackendService(ILoggerFactory loggerFactory, 
+            INatsJSContext natsJsContext,
+            INatsJSMessageHandler<TEvent> natsJsMessageHandler,
+            StreamConfig streamConfig, 
+            NatsJSOrderedConsumerOpts? consumerOptions = null)
         {
             _logger = loggerFactory.CreateLogger<NatsBackendService<TEvent>>();
-            _streamConfig = streamConfig;
             _natsJetStreamContext = natsJsContext;
+            _natsJsMessageHandler = natsJsMessageHandler;
+            _streamConfig = streamConfig;
             _consumerOptions = consumerOptions ?? NatsJSOrderedConsumerOpts.Default;
         }
 
         protected override async Task ExecuteAsync(CancellationToken cancellationToken)
         {
+            _logger.TraceMethodEntry();
+
             // Create the Stream, if it does not exist:
             await _natsJetStreamContext.CreateStreamAsync(_streamConfig, cancellationToken);
-            
+
             // Create the Ordered Consumer:
             var consumer = await _natsJetStreamContext
                 .CreateOrderedConsumerAsync(stream: _streamConfig.Name!, _consumerOptions, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
             // Consume Messages and Log them
-            await foreach (var msg in consumer
-                .ConsumeAsync<AppEvent>(cancellationToken: cancellationToken)
+            await foreach (var message in consumer
+                .ConsumeAsync<TEvent>(cancellationToken: cancellationToken)
                 .ConfigureAwait(false))
             {
-                _logger.LogInformation("received msg on {Subject} with data {Data}", msg.Subject, msg.Data);
-
-                await msg.AckAsync();
+                await _natsJsMessageHandler
+                    .HandleAsync(message, cancellationToken)
+                    .ConfigureAwait(false);
             }
         }
     }

@@ -30,11 +30,14 @@ builder.AddNatsClient("nats", configureOptions: opts =>
 // Nats JetStream
 builder.AddNatsJetStream();
 
+// Nats Message Handlers
+builder.Services.AddSingleton<LoggingNatsMessageHandler<AppEvent>>();
+
 // Nats Background Service 
 builder.Services.AddHostedService((serviceProvider) => 
 {
     // Listen to the AppEvents Stream
-    var streamConfig = new StreamConfig(Constants.AppEventsStreamName, ["events.>"])
+    var appEventsStreamConfig = new StreamConfig(Constants.AppEventsStreamName, ["events.>"])
     {
         Description = "AppEvents Stream",
     };
@@ -42,7 +45,8 @@ builder.Services.AddHostedService((serviceProvider) =>
     return new NatsBackendService<AppEvent>(
         loggerFactory: serviceProvider.GetRequiredService<ILoggerFactory>(),
         natsJsContext: serviceProvider.GetRequiredService<INatsJSContext>(),
-        streamConfig: streamConfig,
+        natsJsMessageHandler: serviceProvider.GetRequiredService<LoggingNatsMessageHandler<AppEvent>>(),
+        streamConfig: appEventsStreamConfig,
         consumerOptions: NatsJSOrderedConsumerOpts.Default);
 });
 
