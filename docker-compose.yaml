@@ -1,5 +1,6 @@
 services:
   nats:
+    name: nats-server
     image: nats:latest
     volumes:
       - ./docker/nats-store:/nats/jetstream

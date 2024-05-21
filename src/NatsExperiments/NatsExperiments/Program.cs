@@ -42,7 +42,7 @@ builder.Services.AddHostedService((serviceProvider) =>
         Description = "AppEvents Stream",
     };
 
-    return new NatsBackendService<AppEvent>(
+    return new NatsMessageConsumerService<AppEvent>(
         loggerFactory: serviceProvider.GetRequiredService<ILoggerFactory>(),
         natsJsContext: serviceProvider.GetRequiredService<INatsJSContext>(),
         natsJsMessageHandler: serviceProvider.GetRequiredService<LoggingNatsMessageHandler<AppEvent>>(),

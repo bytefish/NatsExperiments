@@ -7,22 +7,22 @@ using NatsExperiments.Infrastructure.Nats;
 
 namespace NatsExperiments.Hosted
 {
-    public class NatsBackendService<TEvent> : BackgroundService
+    public class NatsMessageConsumerService<TEvent> : BackgroundService
     {
-        private readonly ILogger<NatsBackendService<TEvent>> _logger;
+        private readonly ILogger<NatsMessageConsumerService<TEvent>> _logger;
 
         private readonly StreamConfig _streamConfig;
         private readonly INatsJSContext _natsJetStreamContext;
         private readonly INatsJSMessageHandler<TEvent> _natsJsMessageHandler;
         private readonly NatsJSOrderedConsumerOpts _consumerOptions;
 
-        public NatsBackendService(ILoggerFactory loggerFactory, 
-            INatsJSContext natsJsContext,
+        public NatsMessageConsumerService(ILoggerFactory loggerFactory, 
+            INatsJSContext natsJsContext, 
             INatsJSMessageHandler<TEvent> natsJsMessageHandler,
             StreamConfig streamConfig, 
             NatsJSOrderedConsumerOpts? consumerOptions = null)
         {
-            _logger = loggerFactory.CreateLogger<NatsBackendService<TEvent>>();
+            _logger = loggerFactory.CreateLogger<NatsMessageConsumerService<TEvent>>();
             _natsJetStreamContext = natsJsContext;
             _natsJsMessageHandler = natsJsMessageHandler;
             _streamConfig = streamConfig;
